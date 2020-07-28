@@ -1,3 +1,5 @@
+A fork of the https://github.com/microsoft/Azure_Kinect_ROS_Driver repository
+
 # Azure Kinect ROS Driver
 
 This project is a node which publishes sensor data from the [Azure Kinect Developer Kit](https://azure.microsoft.com/en-us/services/kinect-dk/) to the [Robot Operating System (ROS)](http://www.ros.org/). Developers working with ROS can use this node to connect an Azure Kinect Developer Kit to an existing ROS installation.
