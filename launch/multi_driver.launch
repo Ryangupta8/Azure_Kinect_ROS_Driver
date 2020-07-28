@@ -1,0 +1,207 @@
+<?xml version="1.0"?>
+
+<launch>
+  <arg name="2_cameras" default="true"/>
+  <arg name="3_cameras" default="false"/>
+
+  <arg name="gui" default="true"/>
+
+  <group if="$(arg 3_cameras)">
+    <arg name="kinect3_tf_prefix"         default="kinect3_" />
+
+  </group>  
+
+  <arg name="kinect1_tf_prefix"         default="kinect1_" />               <!-- Prefix added to tf frame IDs. It typically contains a trailing '_' unless empty. -->
+  <arg name="kinect2_tf_prefix"         default="kinect2_" />
+
+
+
+
+  <!-- Kinect 1 -->
+  <param name="azure_description1"
+    command="xacro $(find azure_kinect_ros_driver)/urdf/azure_kinect.urdf.xacro tf_prefix:=$(arg kinect1_tf_prefix)/" />
+  <node name="joint_state_publisher_azure1" pkg="joint_state_publisher" type="joint_state_publisher">
+    <remap from="robot_description" to="azure_description1" />
+    <remap from="/joint_states" to="/kinect1/joint_states"/>
+  </node>  
+  <node name="robot_state_publisher_azure1" pkg="robot_state_publisher" type="robot_state_publisher">
+    <remap from="robot_description" to="azure_description1" />
+    <remap from="/joint_states" to="/kinect1/joint_states"/>
+  </node>
+
+  <!-- Kinect 2 -->
+  <param name="azure_description2"
+    command="xacro $(find azure_kinect_ros_driver)/urdf/azure_kinect.urdf.xacro tf_prefix:=$(arg kinect2_tf_prefix)/" />
+  <node name="joint_state_publisher_azure2" pkg="joint_state_publisher" type="joint_state_publisher">
+    <remap from="robot_description" to="azure_description2" />
+    <remap from="/joint_states" to="/kinect2/joint_states"/>
+  </node>  
+  <node name="robot_state_publisher_azure2" pkg="robot_state_publisher" type="robot_state_publisher">
+    <remap from="robot_description" to="azure_description2" />
+    <remap from="/joint_states" to="/kinect2/joint_states"/>
+  </node>
+
+  <!-- Kinect 3 -->
+  <group if="$(arg 3_cameras)">
+    <param name="azure_description3"
+      command="xacro $(find azure_kinect_ros_driver)/urdf/azure_kinect.urdf.xacro tf_prefix:=$(arg kinect3_tf_prefix)/" />
+    <node name="joint_state_publisher_azure3" pkg="joint_state_publisher" type="joint_state_publisher">
+      <remap from="robot_description" to="azure_description3" />
+      <remap from="/joint_states" to="/kinect3/joint_states"/>
+    </node>  
+    <node name="robot_state_publisher_azure3" pkg="robot_state_publisher" type="robot_state_publisher">
+      <remap from="robot_description" to="azure_description3" />
+      <remap from="/joint_states" to="/kinect3/joint_states"/>
+    </node>
+  </group>
+
+
+
+  <arg name="depth_enabled"           default="true" />           <!-- Enable or disable the depth camera -->
+  <arg name="depth_mode"              default="NFOV_UNBINNED" />  <!-- Set the depth camera mode, which affects FOV, depth range, and camera resolution. See Azure Kinect documentation for full details. Valid options: NFOV_UNBINNED, NFOV_2X2BINNED, WFOV_UNBINNED, WFOV_2X2BINNED, and PASSIVE_IR -->
+  <arg name="color_enabled"           default="true" />           <!-- Enable or disable the color camera -->
+  <arg name="color_format"            default="bgra" />           <!-- The format of RGB camera. Valid options: bgra, jpeg -->
+  <arg name="color_resolution"        default="3072P" />          <!-- Resolution at which to run the color camera. Valid options: 720P, 1080P, 1440P, 1536P, 2160P, 3072P -->
+  <arg name="fps"                     default="15" />              <!-- FPS to run both cameras at. Valid options are 5, 15, and 30 -->
+  <arg name="point_cloud"             default="true" />           <!-- Generate a point cloud from depth data. Requires depth_enabled -->
+  <arg name="rgb_point_cloud"         default="false" />           <!-- Colorize the point cloud using the RBG camera. Requires color_enabled and depth_enabled -->
+  <arg name="point_cloud_in_depth_frame" default="false" />        <!-- Whether the RGB pointcloud is rendered in the depth frame (true) or RGB frame (false). Will either match the resolution of the depth camera (true) or the RGB camera (false). -->
+  <arg name="required"                default="false" />          <!-- Argument which specified if the entire launch file should terminate if the node dies -->
+  <!-- <arg name="sensor_sn"               default="000319193812" />               Sensor serial number. If none provided, the first sensor will be selected -->
+  <arg name="recording_file"          default="" />               <!-- Absolute path to a mkv recording file which will be used with the playback api instead of opening a device -->
+  <arg name="recording_loop_enabled"  default="false" />          <!-- If set to true the recording file will rewind the beginning once end of file is reached -->
+  <arg name="body_tracking_enabled"           default="false" />  <!-- If set to true the joint positions will be published as marker arrays -->
+  <arg name="body_tracking_smoothing_factor"  default="0.0" />    <!-- Set between 0 for no smoothing and 1 for full smoothing -->
+  <arg name="rescale_ir_to_mono8"  default="false" />    <!-- Whether to rescale the IR image to an 8-bit monochrome image for visualization and further processing. A scaling factor (ir_mono8_scaling_factor) is applied. -->
+  <arg name="ir_mono8_scaling_factor"  default="1.0" />    <!-- Scaling factor to apply when converting IR to mono8 (see rescale_ir_to_mono8). If using illumination, use the value 0.5-1. If using passive IR, use 10. -->
+  <arg name="imu_rate_target" default="0"/>                       <!-- Desired output rate of IMU messages. Set to 0 (default) for full rate (1.6 kHz). --> 
+
+  <node pkg="azure_kinect_ros_driver" type="node" name="azure_kinect_ros_driver1" output="screen" required="$(arg required)">
+    <param name="depth_enabled"     type="bool"   value="$(arg depth_enabled)" />
+    <param name="depth_mode"        type="string" value="$(arg depth_mode)" />
+    <param name="color_enabled"     type="bool"   value="$(arg color_enabled)" />
+    <param name="color_format"      type="string" value="$(arg color_format)" />
+    <param name="color_resolution"  type="string" value="$(arg color_resolution)" />
+    <param name="fps"               type="int"    value="$(arg fps)" />
+    <param name="point_cloud"       type="bool"   value="$(arg point_cloud)" />
+    <param name="rgb_point_cloud"   type="bool"   value="$(arg rgb_point_cloud)" />
+    <param name="point_cloud_in_depth_frame"   type="bool"   value="$(arg point_cloud_in_depth_frame)" />
+
+    <param name="sensor_sn"         type="string" value="000229101412" /> <!--$(arg sensor_sn) -->
+
+    <param name="kinect1_tf_prefix"         type="string" value="1" />   <!--$(arg tf_prefix)-->
+
+    <param name="recording_file"          type="string" value="$(arg recording_file)" />
+    <param name="recording_loop_enabled"  type="bool"   value="$(arg recording_loop_enabled)" />
+    <param name="body_tracking_enabled"           type="bool"   value="$(arg body_tracking_enabled)" />
+    <param name="body_tracking_smoothing_factor"  type="double" value="$(arg body_tracking_smoothing_factor)" />
+    <param name="rescale_ir_to_mono8" type="bool" value="$(arg rescale_ir_to_mono8)" />
+    <param name="ir_mono8_scaling_factor" type="double" value="$(arg ir_mono8_scaling_factor)" />
+    <param name="imu_rate_target" type="int" value="$(arg imu_rate_target)"/>
+
+    <!-- Remap all of the topics published from the node -->
+    <remap from="rgb/image_raw" to="kinect1/rgb/image_raw"/>
+    <remap from="rgb/camera_info" to="kinect1/rgb/camera_info"/>
+    <remap from="depth/image_raw" to="kinect1/depth/image_raw"/>
+    <remap from="depth/camera_info" to="kinect1/depth/camera_info"/>
+    <remap from="depth_to_rgb/image_raw" to="kinect1/depth_to_rgb/image_raw"/>
+    <remap from="depth_to_rgb/camera_info" to="kinect1/depth_to_rgb/camera_info"/>
+    <remap from="rgb_to_depth/image_raw" to="kinect1/rgb_to_depth/image_raw"/>
+    <remap from="rgb_to_depth/camera_info" to="kinect1/rgb_to_depth/camera_info"/>
+    <remap from="ir/image_raw" to="kinect1/ir/image_raw"/>
+    <remap from="ir/camera_info" to="kinect1/ir/camera_info"/>
+    <remap from="imu" to="kinect1/imu"/>
+    <remap from="points2" to="kinect1/points2"/>
+    <remap from="body_tracking_data" to="kinect1/body_tracking_data"/>
+    <remap from="body_index_map/image_raw" to="kinect1/body_index_map/image_raw"/>
+  </node>
+
+  <node pkg="azure_kinect_ros_driver" type="node" name="azure_kinect_ros_driver2" output="screen" required="$(arg required)">
+    <param name="depth_enabled"     type="bool"   value="$(arg depth_enabled)" />
+    <param name="depth_mode"        type="string" value="$(arg depth_mode)" />
+    <param name="color_enabled"     type="bool"   value="$(arg color_enabled)" />
+    <param name="color_format"      type="string" value="$(arg color_format)" />
+    <param name="color_resolution"  type="string" value="$(arg color_resolution)" />
+    <param name="fps"               type="int"    value="$(arg fps)" />
+    <param name="point_cloud"       type="bool"   value="$(arg point_cloud)" />
+    <param name="rgb_point_cloud"   type="bool"   value="$(arg rgb_point_cloud)" />
+    <param name="point_cloud_in_depth_frame"   type="bool"   value="$(arg point_cloud_in_depth_frame)" />
+
+    <param name="sensor_sn"         type="string" value="000161601412" />       <!--$(arg sensor_sn)-->
+    
+    <param name="kinect2_tf_prefix"         type="string" value="2" />   <!--$(arg tf_prefix)-->
+
+    <param name="recording_file"          type="string" value="$(arg recording_file)" />
+    <param name="recording_loop_enabled"  type="bool"   value="$(arg recording_loop_enabled)" />
+    <param name="body_tracking_enabled"           type="bool"   value="$(arg body_tracking_enabled)" />
+    <param name="body_tracking_smoothing_factor"  type="double" value="$(arg body_tracking_smoothing_factor)" />
+    <param name="rescale_ir_to_mono8" type="bool" value="$(arg rescale_ir_to_mono8)" />
+    <param name="ir_mono8_scaling_factor" type="double" value="$(arg ir_mono8_scaling_factor)" />
+    <param name="imu_rate_target" type="int" value="$(arg imu_rate_target)"/>
+
+    <!-- Remap all of the topics published from the node -->
+    <remap from="rgb/image_raw" to="kinect2/rgb/image_raw"/>
+    <remap from="rgb/camera_info" to="kinect2/rgb/camera_info"/>
+    <remap from="depth/image_raw" to="kinect2/depth/image_raw"/>
+    <remap from="depth/camera_info" to="kinect2/depth/camera_info"/>
+    <remap from="depth_to_rgb/image_raw" to="kinect2/depth_to_rgb/image_raw"/>
+    <remap from="depth_to_rgb/camera_info" to="kinect2/depth_to_rgb/camera_info"/>
+    <remap from="rgb_to_depth/image_raw" to="kinect2/rgb_to_depth/image_raw"/>
+    <remap from="rgb_to_depth/camera_info" to="kinect2/rgb_to_depth/camera_info"/>
+    <remap from="ir/image_raw" to="kinect2/ir/image_raw"/>
+    <remap from="ir/camera_info" to="kinect2/ir/camera_info"/>
+    <remap from="imu" to="kinect2/imu"/>
+    <remap from="points2" to="kinect2/points2"/>
+    <remap from="body_tracking_data" to="kinect2/body_tracking_data"/>
+    <remap from="body_index_map/image_raw" to="kinect2/body_index_map/image_raw"/>
+  </node>
+
+  <group if="$(arg 3_cameras)">
+    <node pkg="azure_kinect_ros_driver" type="node" name="azure_kinect_ros_driver3" output="screen" required="$(arg required)">
+      <param name="depth_enabled"     type="bool"   value="$(arg depth_enabled)" />
+      <param name="depth_mode"        type="string" value="$(arg depth_mode)" />
+      <param name="color_enabled"     type="bool"   value="$(arg color_enabled)" />
+      <param name="color_format"      type="string" value="$(arg color_format)" />
+      <param name="color_resolution"  type="string" value="$(arg color_resolution)" />
+      <param name="fps"               type="int"    value="$(arg fps)" />
+      <param name="point_cloud"       type="bool"   value="$(arg point_cloud)" />
+      <param name="rgb_point_cloud"   type="bool"   value="$(arg rgb_point_cloud)" />
+      <param name="point_cloud_in_depth_frame"   type="bool"   value="$(arg point_cloud_in_depth_frame)" />
+
+      <param name="sensor_sn"         type="string" value="000466592912" />       <!--$(arg sensor_sn)-->
+      
+      <param name="kinect3_tf_prefix"         type="string" value="2" />   <!--$(arg tf_prefix)-->
+
+      <param name="recording_file"          type="string" value="$(arg recording_file)" />
+      <param name="recording_loop_enabled"  type="bool"   value="$(arg recording_loop_enabled)" />
+      <param name="body_tracking_enabled"           type="bool"   value="$(arg body_tracking_enabled)" />
+      <param name="body_tracking_smoothing_factor"  type="double" value="$(arg body_tracking_smoothing_factor)" />
+      <param name="rescale_ir_to_mono8" type="bool" value="$(arg rescale_ir_to_mono8)" />
+      <param name="ir_mono8_scaling_factor" type="double" value="$(arg ir_mono8_scaling_factor)" />
+      <param name="imu_rate_target" type="int" value="$(arg imu_rate_target)"/>
+
+      <!-- Remap all of the topics published from the node -->
+      <remap from="rgb/image_raw" to="kinect3/rgb/image_raw"/>
+      <remap from="rgb/camera_info" to="kinect3/rgb/camera_info"/>
+      <remap from="depth/image_raw" to="kinect3/depth/image_raw"/>
+      <remap from="depth/camera_info" to="kinect3/depth/camera_info"/>
+      <remap from="depth_to_rgb/image_raw" to="kinect3/depth_to_rgb/image_raw"/>
+      <remap from="depth_to_rgb/camera_info" to="kinect3/depth_to_rgb/camera_info"/>
+      <remap from="rgb_to_depth/image_raw" to="kinect3/rgb_to_depth/image_raw"/>
+      <remap from="rgb_to_depth/camera_info" to="kinect3/rgb_to_depth/camera_info"/>
+      <remap from="ir/image_raw" to="kinect3/ir/image_raw"/>
+      <remap from="ir/camera_info" to="kinect3/ir/camera_info"/>
+      <remap from="imu" to="kinect3/imu"/>
+      <remap from="points2" to="kinect3/points2"/>
+      <remap from="body_tracking_data" to="kinect3/body_tracking_data"/>
+      <remap from="body_index_map/image_raw" to="kinect3/body_index_map/image_raw"/>
+    </node>
+  </group>
+
+
+  <group if="$(arg gui)">
+     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find azure_kinect_ros_driver)/config/azurekinect.rviz" output="screen"/>
+  </group>
+
+
+</launch>

@@ -160,7 +160,7 @@ K4AROSDevice::K4AROSDevice(const NodeHandle& n, const NodeHandle& p)
       }
       catch (exception)
       {
-        ROS_ERROR_STREAM("Failed to open K4A device at index " << i);
+        // ROS_ERROR_STREAM("Failed to open K4A device at index " << i);
         continue;
       }
 
